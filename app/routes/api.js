@@ -53,7 +53,6 @@ router.get("/setup", function(request, response) {
 
 // Route to authenticate a user
 router.post('/authenticate', function(request, response) {
-    
     // Finding the user
     User.findOne({
         username: request.body.username
@@ -68,8 +67,9 @@ router.post('/authenticate', function(request, response) {
             if (user.password != request.body.password) {
                 response.json({ success: false, message: 'Authentication failed. Wrong password.' });
             } else {
+
                 // if user is found and password is right
-                // create a token
+                // create a token based on organiser or participant
                 const payload = {
                     organiser: user.oraganiser 
                 };
@@ -87,5 +87,43 @@ router.post('/authenticate', function(request, response) {
         }
     });
 });
+
+// route middleware to verify a token
+router.use(function(request, response, next) {
+    // check header or url parameters or post parameters for token
+    var token = request.body.token || request.query.token || request.headers['x-access-token'];
+    
+    // decode token
+    if (token) {    
+        // verifies secret and checks expiry
+        jwt.verify(token, config.secretKey, function(error, decoded) {      
+            if (error) {
+                return response.json({ success: false, message: 'Failed to authenticate token.' });    
+            } else {
+                // if everything is good, save to request for use in other routes
+                request.decoded = decoded;
+                console.log(decoded);
+                next();
+            }
+        });
+    
+    } else {
+        // if there is no token
+        // return an error
+        return response.status(403).send({ 
+            success: false, 
+            message: 'No token provided.' 
+        });
+    }
+});
+
+// Test for middleware verifying a token
+/*
+router.get("/users", function(request, response) {
+    User.find({}, function(error, users) {
+        response.json(users);
+    });
+});
+*/
 
 module.exports = router;
