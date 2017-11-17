@@ -51,8 +51,37 @@ router.get("/setup", function(request, response) {
     response.json({success: true});
 });
 
+// Route to sign up
+router.post("/signup", function(request, response) {
+    // Check if both username and password are present
+    if (request.body.username && request.body.password) {
+        User.findOne({username: request.body.username}, function(error, user) {
+            if (error) throw error;
+            
+            if (user) {
+                // Username is already registered
+                response.json({ success: false, message: "This username is already registered" });
+            } else {
+                // Create the user in db
+                User.create(request.body, function(error, user) {
+                    if (error) throw error;
+
+                    if (!user) {
+                        response.json({ success: false, message: "Sign Up failed" });
+                    } else {
+                        // Successfully created the user
+                        response.json({ success: true, message: "Sign up successfully"});
+                    }
+                });
+            }
+        });
+    } else {
+        response.json({ success: false, message: "Either username or message is missing" });
+    }
+});
+
 // Route to authenticate a user
-router.post('/authenticate', function(request, response) {
+router.post("/authenticate", function(request, response) {
     // Finding the user
     User.findOne({
         username: request.body.username
@@ -61,11 +90,11 @@ router.post('/authenticate', function(request, response) {
         if (error) throw error;
     
         if (!user) {
-            response.json({ success: false, message: 'Authentication failed. User not found.' });
+            response.json({ success: false, message: "Authentication failed. User not found." });
         } else if (user) {
             // Check if password matches
             if (user.password != request.body.password) {
-                response.json({ success: false, message: 'Authentication failed. Wrong password.' });
+                response.json({ success: false, message: "Authentication failed. Wrong password." });
             } else {
 
                 // if user is found and password is right
@@ -80,7 +109,7 @@ router.post('/authenticate', function(request, response) {
                 // return the token
                 response.json({
                     success: true,
-                    message: 'Authenticated! Token expires in 24 hours.',
+                    message: "Authenticated! Token expires in 24 hours.",
                     token: token
                 });
             }   
@@ -91,14 +120,14 @@ router.post('/authenticate', function(request, response) {
 // route middleware to verify a token
 router.use(function(request, response, next) {
     // check header or url parameters or post parameters for token
-    var token = request.body.token || request.query.token || request.headers['x-access-token'];
+    var token = request.body.token || request.query.token || request.headers["x-access-token"];
     
     // decode token
     if (token) {    
         // verifies secret and checks expiry
         jwt.verify(token, config.secretKey, function(error, decoded) {      
             if (error) {
-                return response.json({ success: false, message: 'Failed to authenticate token.' });    
+                return response.json({ success: false, message: "Failed to authenticate token." });    
             } else {
                 // if everything is good, save to request for use in other routes
                 request.decoded = decoded;
@@ -112,7 +141,7 @@ router.use(function(request, response, next) {
         // return an error
         return response.status(403).send({ 
             success: false, 
-            message: 'No token provided.' 
+            message: "No token provided." 
         });
     }
 });
