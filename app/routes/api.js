@@ -3,7 +3,11 @@ var express = require("express");
 // Used to create, sign and verify tokens
 var jwt = require("jsonwebtoken");
 
+// Get models
 var User = require("../models/user");
+var EventPost = require("../models/eventpost");
+var Comment = require("../models/comment");
+
 var config = require("../../config");
 
 router = express.Router();
@@ -80,6 +84,38 @@ router.post("/signup", function(request, response) {
     }
 });
 
+// Router to get all events
+router.get("/getAllEvents", function(request, response) {
+    // Find all events
+    Event.find({}, function(error, events) {
+        if (error) throw error;
+
+        response.json(events);
+    });
+});
+
+// Router to get details about a specific event
+// finding by id passed on through get parameter
+router.get("/getEvent/:eId", function(request, response) {
+    // Find the event with eventID
+    Event.findOne({_id : eId}, function(error, event) {
+        if (error) throw error;
+
+        if (!event) {
+            // Wrong event id
+            response.json({ success : false, message : "Event ID doesn't match" });
+        } else {
+            // Find all comments corresponding to that eventID
+            Comment.find({eventId : eId}, function(error, comments) {
+                if (error) throw error;
+
+                // Send the response combination of both event details and comments on that event
+                response.json({"event" : event, "comments" : comments});
+            });
+        }
+    });
+});
+
 // Route to authenticate a user
 router.post("/authenticate", function(request, response) {
     // Finding the user
@@ -145,6 +181,8 @@ router.use(function(request, response, next) {
         });
     }
 });
+
+
 
 // Test for middleware verifying a token
 /*
