@@ -7,15 +7,10 @@ var morgan = require("morgan");
 
 var mongoose = require("mongoose");
 
-// Used to create, sign and verify tokens
-var jwt = require("jsonwebtoken");
 var config = require("./config");
 
 // Connect to the databse
 mongoose.connect(config.database);
-
-// Set secret key to variable
-app.set("secretKey", config.secretKey);
 
 // Use body parser so we can get info from POST and/or URL parameters
 app.use(bodyParser.urlencoded({ extended: false }));

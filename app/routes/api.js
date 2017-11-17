@@ -1,5 +1,10 @@
 var express = require("express");
+
+// Used to create, sign and verify tokens
+var jwt = require("jsonwebtoken");
+
 var User = require("../models/user");
+var config = require("../../config");
 
 router = express.Router();
 
@@ -44,6 +49,43 @@ router.get("/setup", function(request, response) {
     });
     
     response.json({success: true});
+});
+
+// Route to authenticate a user
+router.post('/authenticate', function(request, response) {
+    
+    // Finding the user
+    User.findOne({
+        username: request.body.username
+    }, function(error, user) {
+    
+        if (error) throw error;
+    
+        if (!user) {
+            response.json({ success: false, message: 'Authentication failed. User not found.' });
+        } else if (user) {
+            // Check if password matches
+            if (user.password != request.body.password) {
+                response.json({ success: false, message: 'Authentication failed. Wrong password.' });
+            } else {
+                // if user is found and password is right
+                // create a token
+                const payload = {
+                    organiser: user.oraganiser 
+                };
+                var token = jwt.sign(payload, config.secretKey, {
+                    expiresIn: 24*60*60 // expires in 24 hours
+                });
+    
+                // return the token
+                response.json({
+                    success: true,
+                    message: 'Authenticated! Token expires in 24 hours.',
+                    token: token
+                });
+            }   
+        }
+    });
 });
 
 module.exports = router;
